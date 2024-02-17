@@ -1,6 +1,7 @@
 # From https://github.com/namisan/mt-dnn
 import torch 
 import torch.nn.functional as F
+from dataclasses import dataclass
 def KL(input, target, reduction="sum"):
     input = input.float()
     target = target.float()
@@ -27,7 +28,7 @@ def adv_project(grad, norm_type='inf', eps=1e-6):
         direction = grad / (grad.abs().max(-1, keepdim=True)[0] + eps)
     return direction
 
-@dataclass 
+@dataclass
 class adv_config:
     noise_var: float = 1e-5
     adv_step_size: float = 1e-3
