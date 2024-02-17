@@ -106,7 +106,7 @@ def train_model(
             logger.logkv("eval_accuracy", eval_accs)
         all_logits = []
         all_labels = []
-        all_adv_losses = []
+        all_adv_losses = 0.
         for i in range(batch_size // minibatch_size):
             try:
                 mbatch = [next(it) for _ in range(minibatch_size)]
@@ -145,8 +145,7 @@ def train_model(
                 adv_loss_f = KL(adv_logits, logits.detach())
                 adv_loss_b = KL(logits, adv_logits.detach())
                 adv_loss = (adv_loss_f + adv_loss_b) * adv_config.adv_alpha
-                print(adv_loss)
-                all_adv_losses.extend(adv_loss)
+                all_adv_losses +=adv_loss
             
 
 
