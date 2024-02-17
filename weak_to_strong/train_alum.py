@@ -17,7 +17,7 @@ from weak_to_strong.eval import eval_model_acc
 from weak_to_strong.loss import xent_loss
 from weak_to_strong.model import TransformerWithHead
 
-from utils import KL, adv_project, adv_config
+from weak_to_strong.utils import KL, adv_project, adv_config
 
 @dataclass
 class ModelConfig:
