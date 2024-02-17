@@ -127,7 +127,7 @@ def train_model(
             all_labels.extend(labels)
 
             # ADD ALUM
-            noise = embed.data.new(all_embed.size()).normal_(0, 1) * adv_config.noise_var
+            noise = embed.data.new(embed.size()).normal_(0, 1) * adv_config.noise_var
             noise.requires_grad_()
             newembed = embed.data.detach() + noise
             adv_logits, _ = model(input_ids, embed=newembed) 
