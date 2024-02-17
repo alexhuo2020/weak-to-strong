@@ -106,9 +106,8 @@ def train_model(
             logger.logkv("eval_accuracy", eval_accs)
         all_logits = []
         all_labels = []
-        all_embed = []
+        all_adv_losses = []
         for i in range(batch_size // minibatch_size):
-            assert batch_size == minibatch_size # NotImplementedError
             try:
                 mbatch = [next(it) for _ in range(minibatch_size)]
             except StopIteration:
@@ -124,39 +123,39 @@ def train_model(
             labels = torch.tensor([ex["soft_label"] for ex in mbatch]).to(io_device)
 
             logits, embed = model(input_ids, return_embed=True)
-
-            
-
             all_logits.extend(logits.to(io_device))
             all_labels.extend(labels)
-            all_embed.extend(embed)
+
+            # ADD ALUM
+            noise = embed.data.new(all_embed.size()).normal_(0, 1) * adv_config.noise_var
+            noise.requires_grad_()
+            newembed = embed.data.detach() + noise
+            adv_logits, _ = model(input_ids, embed=newembed) 
+            adv_loss = KL(adv_logits, logits.detach(), reduction="batchmean")
+            delta_grad, = torch.autograd.grad(adv_loss, noise, only_inputs=True)
+            norm = delta_grad.norm()
+            if not((torch.isnan(norm) or torch.isinf(norm))):
+                noise = noise + delta_grad * adv_config.adv_step_size
+                # line 6 projection
+                noise = adv_project(noise, norm_type=adv_config.project_norm_type, eps=adv_config.noise_gamma)
+                newembed = embed.data.detach() + noise
+                newembed = newembed.detach()
+                adv_logits, _ = model(input_ids, embed=newembed)
+                # line 8 symmetric KL
+                adv_loss_f = KL(adv_logits, logits.detach())
+                adv_loss_b = KL(logits, adv_logits.detach())
+                adv_loss = (adv_loss_f + adv_loss_b) * adv_config.adv_alpha
+                all_adv_losses.extend(adv_loss)
+            
+
 
         all_logits = torch.stack(all_logits)
         all_labels = torch.stack(all_labels)
-        loss = loss_fn(all_logits, all_labels, step_frac=step / nsteps)
+        all_adv_losses = torch.stack(all_adv_losses)
+        loss = loss_fn(all_logits, all_labels, step_frac=step / nsteps) + all_adv_losses
         loss_tot += loss.item()
         
-        all_embed = torch.stack(all_embed)
-        noise = all_embed.data.new(all_embed.size()).normal_(0, 1) * adv_config.noise_var
-        noise.requires_grad_()
-        newembed = all_embed.data.detach() + noise
-        adv_logits, _ = model(input_ids, embed=newembed) 
-        adv_loss = KL(adv_logits, logits.detach(), reduction="batchmean")
 
-        delta_grad, = torch.autograd.grad(adv_loss, noise, only_inputs=True)
-        norm = delta_grad.norm()
-        if not((torch.isnan(norm) or torch.isinf(norm))):
-            noise = noise + delta_grad * adv_config.adv_step_size
-            # line 6 projection
-            noise = adv_project(noise, norm_type=adv_config.project_norm_type, eps=adv_config.noise_gamma)
-            newembed = embed.data.detach() + noise
-            newembed = newembed.detach()
-            adv_logits, _ = model(input_ids, embed=newembed)
-            # line 8 symmetric KL
-            adv_loss_f = KL(adv_logits, logits.detach())
-            adv_loss_b = KL(logits, adv_logits.detach())
-            adv_loss = (adv_loss_f + adv_loss_b) * adv_config.adv_alpha
-            loss = loss + adv_loss
 
         loss.backward()
         losses.append(loss_tot)
