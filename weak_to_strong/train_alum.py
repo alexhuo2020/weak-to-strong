@@ -130,7 +130,7 @@ def train_model(
             noise = embed.data.new(embed.size()).normal_(0, 1) * adv_config.noise_var
             noise.requires_grad_()
             newembed = embed.data.detach() + noise
-            adv_logits, _ = model(input_ids, embed=newembed) 
+            adv_logits = model(input_ids, embed=newembed) 
             adv_loss = KL(adv_logits, logits.detach(), reduction="batchmean")
             delta_grad, = torch.autograd.grad(adv_loss, noise, only_inputs=True)
             norm = delta_grad.norm()
@@ -140,7 +140,7 @@ def train_model(
                 noise = adv_project(noise, norm_type=adv_config.project_norm_type, eps=adv_config.noise_gamma)
                 newembed = embed.data.detach() + noise
                 newembed = newembed.detach()
-                adv_logits, _ = model(input_ids, embed=newembed)
+                adv_logits = model(input_ids, embed=newembed)
                 # line 8 symmetric KL
                 adv_loss_f = KL(adv_logits, logits.detach())
                 adv_loss_b = KL(logits, adv_logits.detach())
