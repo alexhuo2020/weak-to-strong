@@ -145,6 +145,7 @@ def train_model(
                 adv_loss_f = KL(adv_logits, logits.detach())
                 adv_loss_b = KL(logits, adv_logits.detach())
                 adv_loss = (adv_loss_f + adv_loss_b) * adv_config.adv_alpha
+                print(adv_loss)
                 all_adv_losses.extend(adv_loss)
             
 
