@@ -50,7 +50,7 @@ class TransformerWithHead(PreTrainedModel):
         return emd
 
 
-    def forward(self, input_ids: torch.LongTensor, embed=None):
+    def forward(self, input_ids: torch.LongTensor, embed=None, return_embed=False):
         """
         Forward pass of the model with a linear head.
 
@@ -84,5 +84,8 @@ class TransformerWithHead(PreTrainedModel):
         )
         self.score.to(hidden_states.device)
         logits = self.score(hidden_states)
-        return logits, embed
+        if return_embed == False:
+            return logits
+        else:
+            return logits, embed
     
