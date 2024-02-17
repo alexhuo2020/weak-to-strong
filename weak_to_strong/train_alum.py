@@ -152,12 +152,13 @@ def train_model(
         all_logits = torch.stack(all_logits)
         all_labels = torch.stack(all_labels)
         # all_adv_losses = torch.stack(all_adv_losses)
-        loss = loss_fn(all_logits, all_labels, step_frac=step / nsteps) + all_adv_losses
+        loss = loss_fn(all_logits, all_labels, step_frac=step / nsteps) 
+        allloss += all_adv_losses
         loss_tot += loss.item()
         
 
 
-        loss.backward()
+        loss_tot.backward()
         losses.append(loss_tot)
         accuracies.append(
             torch.mean(
