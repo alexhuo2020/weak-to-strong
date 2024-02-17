@@ -14,7 +14,9 @@ from weak_to_strong.common import get_tokenizer
 from weak_to_strong.datasets import (VALID_DATASETS, load_dataset,
                                      tokenize_dataset)
 from weak_to_strong.loss import logconf_loss_fn, product_loss_fn, xent_loss
-from weak_to_strong.train import ModelConfig, train_and_save_model
+from weak_to_strong.train_alum import ModelConfig, train_and_save_model
+
+from weak_to_strong.utils import adv_config
 
 # NOTE learning rates are not particularly tuned, work somewhat reasonably at train batch size 32
 MODEL_CONFIGS = [
